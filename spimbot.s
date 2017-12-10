@@ -255,7 +255,7 @@ lu_while:
 
     li  $t1 , 1
     sw  $t1 , ANGLE_CONTROL
-    li  $t1 , 280
+    li  $t1 , 270
     sw  $t1 , ANGLE
     lw  $s1 , BOT_X              #s1 : x
     lw  $s2 , BOT_Y              #s2 : y
@@ -341,7 +341,7 @@ timer_interrupt:
 
 star_coin_interrupt:
 
-    sub $sp, $sp, 32
+    sub $sp, $sp, 64
     sw  $s0, 0($sp)
     sw  $s1, 4($sp)
     sw  $s2, 8($sp)
@@ -350,6 +350,14 @@ star_coin_interrupt:
     sw  $s5, 20($sp)
     sw  $s6, 24($sp)
     sw  $s7, 28($sp)
+	sw  $t0, 32($sp)
+    sw  $t1, 36($sp)
+    sw  $t2, 40($sp)
+    sw  $t3, 44($sp)
+    sw  $t4, 48($sp)
+    sw  $t5, 52($sp)
+    sw  $t6, 56($sp)
+    sw  $t7, 60($sp)
 
     sw  $a1, REQUEST_RADAR_ACK
 
@@ -494,9 +502,132 @@ read_banana:
 	add $s3, $s3, 4
 	lw  $s4, 0($s3)
 	beq	$s4, 0xffffffff, finish
-	srl $s1, $s4, 16         # s1 : target_x
+	srl $t5, $s4, 16         # t5 : banana_x
     sll $s4, $s4, 16
-    srl $s0, $s4, 16         # s0 : target_y
+    srl $t6, $s4, 16         # t6 : banana_y
+
+compare_banana:
+
+    lw  $s1 , BOT_X              #s1 : x
+    lw  $s2 , BOT_Y              #s2 : y
+
+    mul $t2 , $s2 , 300
+    add $t2 , $t2 , $s1
+    add $t2 , $t2 , $s6
+    lb  $s4 , 0($t2)
+
+    sge $t1 , $s1 , 150
+    sge $t2 , $s2 , 150
+
+    li  $t4 , 1
+    and $t3 , $t1 , $t2
+    beq $t3 , $t4 , lower_right
+
+    li  $t4 , 0
+    or  $t3 , $t1 , $t2
+    beq $t3 , $t4 , upper_left
+
+    beq $t1 , $t4 , lower_left
+
+    j   upper_right
+
+lower_right:
+	lw  $s1 , BOT_X              # s1 : x
+	lw  $s2 , BOT_Y              # s2 : y
+	sub $t0, $t5, $s1			 # t0: banana_x - x
+	slt $t1, $t0, 0
+	sge $t2, $t0, -10
+	and $t0, $t1, $t2
+
+	beq $t0, 0,	finish
+
+	li  $t1 , 1
+	sw  $t1 , ANGLE_CONTROL
+	li  $t1 , 90
+	sw  $t1 , ANGLE
+
+	li  $t5, 0
+	j 	loop_banana
+
+upper_left:
+	lw  $s1 , BOT_X              # s1 : x
+	lw  $s2 , BOT_Y              # s2 : y
+	sub $t0, $t5, $s1			 # t0: banana_x - x
+	sgt $t1, $t0, 0
+	sle $t2, $t0, 10
+	and $t0, $t1, $t2 			 # 0 < banana_x - x <= 15
+
+	beq $t0, 0,	finish
+
+	li  $t1 , 1
+	sw  $t1 , ANGLE_CONTROL
+	li  $t1 , 270
+	sw  $t1 , ANGLE
+
+	li  $t5, 0
+	j 	loop_banana
+
+lower_left:
+	lw  $s1 , BOT_X              # s1 : x
+	lw  $s2 , BOT_Y              # s2 : y
+	sub $t0, $t6, $s2			 # t0: banana_y - y
+	slt $t1, $t0, 0
+	sge $t2, $t0, -10
+	and $t0, $t1, $t2
+
+	beq $t0, 0,	finish
+
+	li  $t1 , 1
+	sw  $t1 , ANGLE_CONTROL
+	li  $t1 , 270
+	sw  $t1 , ANGLE
+
+	li  $t5, 0
+	j 	loop_banana
+
+upper_right:
+	lw  $s1 , BOT_X              # s1 : x
+	lw  $s2 , BOT_Y              # s2 : y
+	sub $t0, $t6, $s2			 # t0: banana_y - y
+	sgt $t1, $t0, 0
+	sle $t2, $t0, 10
+	and $t0, $t1, $t2
+
+	beq $t0, 0,	finish
+
+	li  $t1 , 1
+	sw  $t1 , ANGLE_CONTROL
+	li  $t1 , 0
+	sw  $t1 , ANGLE
+
+	li  $t5, 0
+	j 	loop_banana
+
+loop_banana:
+	bge $t5, 6000, finish
+	add $t5, $t5, 1
+	j 	loop_banana
+
+loop_banana_ul:
+	lw  $s1 , BOT_X              # s1 : x
+	lw  $s2 , BOT_Y              # s2 : y
+	add $s1 , $s1 , 2
+    mul $t2 , $s2 , 300
+    add $t2 , $t2 , $s1
+    add $t2 , $t2 , $s6
+
+    lb  $s5 , 0($t2)
+    li  $t4 , 1
+    beq $s5 , $t4 , loop_banana_ul
+
+    li  $t1 , 1
+    sw  $t1 , ANGLE_CONTROL
+    li  $t1 , 0
+    sw  $t1 , ANGLE
+	j 	finish
+
+
+
 
 finish:
     lw  $s0, 0($sp)
@@ -507,8 +638,16 @@ finish:
     lw  $s5, 20($sp)
     lw  $s6, 24($sp)
     lw  $s7, 28($sp)
+	lw  $t0, 32($sp)
+    lw  $t1, 36($sp)
+    lw  $t2, 40($sp)
+    lw  $t3, 44($sp)
+    lw  $t4, 48($sp)
+    lw  $t5, 52($sp)
+    lw  $t6, 56($sp)
+    lw  $t7, 60($sp)
 
-    add $sp, $sp, 32
+    add $sp, $sp, 64
 
 
     j	interrupt_dispatch
@@ -532,8 +671,8 @@ non_intrpt:				# was some non-interrupt
 done:
     sw $s7 , REQUEST_RADAR
 
-    la $t6, puzzle_data
-    sw $t6, REQUEST_PUZZLE
+    la $a0, puzzle_data
+    sw $a0, REQUEST_PUZZLE
 
 	la	$k0, chunkIH
 	lw	$a0, 0($k0)		# Restore saved registers
