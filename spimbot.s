@@ -72,8 +72,8 @@ main:
     la $s6 , event_horizon_data
     sw $s6 , REQUEST_JETSTREAM
 
-    la $t7 , coin_data
-    sw $t7 , REQUEST_RADAR
+    la $s7 , coin_data
+    sw $s7 , REQUEST_RADAR
 
     # request puzzle
 	la $t6, puzzle_data
@@ -354,7 +354,7 @@ star_coin_interrupt:
     sw  $a1, REQUEST_RADAR_ACK
 
     la  $s0, coin_data
-    lw  $s0, 0($t7)      # s0 : coin data
+    lw  $s0, 0($s7)      # s0 : coin data
 
 #     beq $s0, 0xffffffff , find_banana
 #     srl $s1, $s0, 16         # s1 : target_x
@@ -530,7 +530,7 @@ non_intrpt:				# was some non-interrupt
 	# fall through to done
 
 done:
-    sw $t7 , REQUEST_RADAR
+    sw $s7 , REQUEST_RADAR
 
     la $t6, puzzle_data
     sw $t6, REQUEST_PUZZLE
