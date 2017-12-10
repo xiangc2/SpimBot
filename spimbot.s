@@ -69,8 +69,8 @@ main:
 
 	# user code
 
-    la $t0 , event_horizon_data
-    sw $t0 , REQUEST_JETSTREAM
+    la $s6 , event_horizon_data
+    sw $s6 , REQUEST_JETSTREAM
 
     la $t7 , coin_data
     sw $t7 , REQUEST_RADAR
@@ -91,7 +91,7 @@ compare:
 
     mul $t2 , $s2 , 300
     add $t2 , $t2 , $s1
-    add $t2 , $t2 , $t0
+    add $t2 , $t2 , $s6
     lb  $s4 , 0($t2)
 
     sge $t1 , $s1 , 150
@@ -101,7 +101,7 @@ compare:
     slt $t5 , $s1 , 150
     and $t4 , $t4 , $t5
 
-    li  $s6 , 0
+    li  $t5 , 0
     beq $t4 , 1   , help
 
     li  $t4 , 1
@@ -123,8 +123,8 @@ help:
     li  $t1 , 180
     sw  $t1 , ANGLE
 
-    add $s6 , $s6 , 1
-    bge $s6 , 3   , compare
+    add $t5 , $t5 , 1
+    bge $t5 , 3   , compare
 
     j   end_help
 
@@ -144,7 +144,7 @@ ru:
     add $s2 , $s2 , 2
     mul $t2 , $s2 , 300
     add $t2 , $t2 , $s1
-    add $t2 , $t2 , $t0
+    add $t2 , $t2 , $s6
     lb  $t2 , 0($t2)
     li  $t4 , 1
     beq $t2 , $t4 , ru_while
@@ -174,7 +174,7 @@ rl:
     sub $s1 , $s1 , 2
     mul $t2 , $s2 , 300
     add $t2 , $t2 , $s1
-    add $t2 , $t2 , $t0
+    add $t2 , $t2 , $s6
     lb  $t2 , 0($t2)
     li  $t4 , 1
     beq $t2 , $t4 , rl_while
@@ -206,7 +206,7 @@ l_l:
     sub $s2 , $s2 , 2
     mul $t2 , $s2 , 300
     add $t2 , $t2 , $s1
-    add $t2 , $t2 , $t0
+    add $t2 , $t2 , $s6
     lb  $t2 , 0($t2)
     li  $t4 , 1
     beq $t2 , $t4 , ll_while
@@ -236,7 +236,7 @@ l_u:
     add $s1 , $s1 , 2
     mul $t2 , $s2 , 300
     add $t2 , $t2 , $s1
-    add $t2 , $t2 , $t0
+    add $t2 , $t2 , $s6
 
     lb  $s5 , 0($t2)
     li  $t4 , 1
@@ -356,132 +356,149 @@ star_coin_interrupt:
     la  $s0, coin_data
     lw  $s0, 0($t7)      # s0 : coin data
 
-    beq $s0, 0xffffffff , finish
-    srl $s1, $s0, 16         # s1 : target_x
-    sll $s0, $s0, 16
-    srl $s0, $s0, 16         # s0 : target_y
+#     beq $s0, 0xffffffff , find_banana
+#     srl $s1, $s0, 16         # s1 : target_x
+#     sll $s0, $s0, 16
+#     srl $s0, $s0, 16         # s0 : target_y
+#
+#     lw  $s2 , BOT_X              #s2 : x
+#     lw  $s3 , BOT_Y              #s3 : y
+#
+#     bge $s3 , $s0 , go_up
+#     j   go_down
+#
+# go_up:
+#
+#     lw  $s4 , BOT_X              #s2 : x
+#     lw  $s5 , BOT_Y              #s3 : y
+#     ble $s5 , $s0 , go_y
+#
+#     li  $t4 , 1
+#     sw  $t4 , ANGLE_CONTROL
+#     li  $t4 , 270
+#     sw  $t4 , ANGLE
+#     j   go_up
+#
+# go_down:
+#
+#     lw  $s4 , BOT_X              #s2 : x
+#     lw  $s5 , BOT_Y              #s3 : y
+#     bge $s5 , $s0 , go_y
+#     li  $t4 , 1
+#     sw  $t4 , ANGLE_CONTROL
+#     li  $t4 , 90
+#     sw  $t4 , ANGLE
+#     j   go_down
+#
+# go_y:
+#
+#     ble $s4 , $s1 , go_right
+#     j   go_left
+#
+# go_right:
+#
+#     lw  $s4 , BOT_X              #s2 : x
+#     lw  $s5 , BOT_Y              #s3 : y
+#     bge $s4 , $s1 , go_back
+#     li  $t4 , 1
+#     sw  $t4 , ANGLE_CONTROL
+#     li  $t4 , 0
+#     sw  $t4 , ANGLE
+#     j   go_right
+#
+# go_left:
+#
+#     lw  $s4 , BOT_X              #s2 : x
+#     lw  $s5 , BOT_Y              #s3 : y
+#     ble $s4 , $s1 , go_back
+#     li  $t4 , 1
+#     sw  $t4 , ANGLE_CONTROL
+#     li  $t4 , 180
+#     sw  $t4 , ANGLE
+#     j   go_left
+#
+# go_back:
+#
+#     move $s6 , $s0
+#     move $s0 , $s3
+#     move $s3 , $s6
+#     move $s6 , $s1
+#     move $s1 , $s2
+#     move $s2 , $s6
+#
+#  bge $s3 , $s0 , bgo_up
+#     j   bgo_down
+#
+# bgo_up:
+#
+#     lw  $s4 , BOT_X              #s2 : x
+#     lw  $s5 , BOT_Y              #s3 : y
+#     ble $s5 , $s0 , bgo_y
+#
+#     li  $t4 , 1
+#     sw  $t4 , ANGLE_CONTROL
+#     li  $t4 , 270
+#     sw  $t4 , ANGLE
+#     j   bgo_up
+#
+# bgo_down:
+#
+#     lw  $s4 , BOT_X              #s2 : x
+#     lw  $s5 , BOT_Y              #s3 : y
+#     bge $s5 , $s0 , bgo_y
+#     li  $t4 , 1
+#     sw  $t4 , ANGLE_CONTROL
+#     li  $t4 , 90
+#     sw  $t4 , ANGLE
+#     j   bgo_down
+#
+# bgo_y:
+#
+#     ble $s4 , $s1 , bgo_right
+#     j   bgo_left
+#
+# bgo_right:
+#
+#     lw  $s4 , BOT_X              #s2 : x
+#     lw  $s5 , BOT_Y              #s3 : y
+#     bge $s4 , $s1 , find_banana
+#     li  $t4 , 1
+#     sw  $t4 , ANGLE_CONTROL
+#     li  $t4 , 0
+#     sw  $t4 , ANGLE
+#     j   bgo_right
+#
+# bgo_left:
+#
+#     lw  $s4 , BOT_X              #s2 : x
+#     lw  $s5 , BOT_Y              #s3 : y
+#     ble $s4 , $s1 , find_banana
+#     li  $t4 , 1
+#     sw  $t4 , ANGLE_CONTROL
+#     li  $t4 , 180
+#     sw  $t4 , ANGLE
+#     j   bgo_left
 
-    lw  $s2 , BOT_X              #s2 : x
-    lw  $s3 , BOT_Y              #s3 : y
 
-    bge $s3 , $s0 , go_up
-    j   go_down
+find_banana:
+	la 	$s3, coin_data
+	lw  $s4, 0($s3)
 
-go_up:
+banana_loop:
+	beq $s4, 0xffffffff, read_banana
+	add $s3, $s3, 4
+	lw  $s4, 0($s3)
+	j 	banana_loop
 
-    lw  $s4 , BOT_X              #s2 : x
-    lw  $s5 , BOT_Y              #s3 : y
-    ble $s5 , $s0 , go_y
-
-    li  $t4 , 1
-    sw  $t4 , ANGLE_CONTROL
-    li  $t4 , 270
-    sw  $t4 , ANGLE
-    j   go_up
-
-go_down:
-
-    lw  $s4 , BOT_X              #s2 : x
-    lw  $s5 , BOT_Y              #s3 : y
-    bge $s5 , $s0 , go_y
-    li  $t4 , 1
-    sw  $t4 , ANGLE_CONTROL
-    li  $t4 , 90
-    sw  $t4 , ANGLE
-    j   go_down
-
-go_y:
-
-    ble $s4 , $s1 , go_right
-    j   go_left
-
-go_right:
-
-    lw  $s4 , BOT_X              #s2 : x
-    lw  $s5 , BOT_Y              #s3 : y
-    bge $s4 , $s1 , go_back
-    li  $t4 , 1
-    sw  $t4 , ANGLE_CONTROL
-    li  $t4 , 0
-    sw  $t4 , ANGLE
-    j   go_right
-
-go_left:
-
-    lw  $s4 , BOT_X              #s2 : x
-    lw  $s5 , BOT_Y              #s3 : y
-    ble $s4 , $s1 , go_back
-    li  $t4 , 1
-    sw  $t4 , ANGLE_CONTROL
-    li  $t4 , 180
-    sw  $t4 , ANGLE
-    j   go_left
-
-go_back:
-
-    move $s6 , $s0
-    move $s0 , $s3
-    move $s3 , $s6
-    move $s6 , $s1
-    move $s1 , $s2
-    move $s2 , $s6
-
- bge $s3 , $s0 , bgo_up
-    j   bgo_down
-
-bgo_up:
-
-    lw  $s4 , BOT_X              #s2 : x
-    lw  $s5 , BOT_Y              #s3 : y
-    ble $s5 , $s0 , bgo_y
-
-    li  $t4 , 1
-    sw  $t4 , ANGLE_CONTROL
-    li  $t4 , 270
-    sw  $t4 , ANGLE
-    j   bgo_up
-
-bgo_down:
-
-    lw  $s4 , BOT_X              #s2 : x
-    lw  $s5 , BOT_Y              #s3 : y
-    bge $s5 , $s0 , bgo_y
-    li  $t4 , 1
-    sw  $t4 , ANGLE_CONTROL
-    li  $t4 , 90
-    sw  $t4 , ANGLE
-    j   bgo_down
-
-bgo_y:
-
-    ble $s4 , $s1 , bgo_right
-    j   bgo_left
-
-bgo_right:
-
-    lw  $s4 , BOT_X              #s2 : x
-    lw  $s5 , BOT_Y              #s3 : y
-    bge $s4 , $s1 , finish
-    li  $t4 , 1
-    sw  $t4 , ANGLE_CONTROL
-    li  $t4 , 0
-    sw  $t4 , ANGLE
-    j   bgo_right
-
-bgo_left:
-
-    lw  $s4 , BOT_X              #s2 : x
-    lw  $s5 , BOT_Y              #s3 : y
-    ble $s4 , $s1 , finish
-    li  $t4 , 1
-    sw  $t4 , ANGLE_CONTROL
-    li  $t4 , 180
-    sw  $t4 , ANGLE
-    j   bgo_left
-
+read_banana:
+	add $s3, $s3, 4
+	lw  $s4, 0($s3)
+	beq	$s4, 0xffffffff, finish
+	srl $s1, $s4, 16         # s1 : target_x
+    sll $s4, $s4, 16
+    srl $s0, $s4, 16         # s0 : target_y
 
 finish:
-
     lw  $s0, 0($sp)
     lw  $s1, 4($sp)
     lw  $s2, 8($sp)
