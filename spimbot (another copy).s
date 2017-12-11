@@ -141,9 +141,6 @@ plaintext: .space 512
 sol: .space 512
 uniq_chars: .space 25
 
-.align 2
-coin_get: .space 4
-
 .text
 
 main:
@@ -169,19 +166,12 @@ main:
 	la $t6, puzzle_data
 	sw $t6, REQUEST_PUZZLE
 
-    la $t1 , coin_get
-    li $t2 , 1
-    sw $t2 , 0($t1)
-
     lw $s1 , BOT_X              #s1 : x
     lw $s2 , BOT_Y              #s2 : y
     li $t1 , 10
     sw $t1 , VELOCITY
 
 compare:
-
-    la $t1 , coin_get
-    lw $t7 , 0($t1) 
 
     lw  $s1 , BOT_X              #s1 : x
     lw  $s2 , BOT_Y              #s2 : y
@@ -428,23 +418,12 @@ star_coin_interrupt:
     la  $s0, coin_data
     lw  $s0, 0($s7)      # s0 : coin data
 
-    la  $t1, coin_get
-    lw  $t2, 0($t1)
-    
-    sge $t1 ,$t2, 5
-    seq $t2 ,$s0 ,0xffffffff 
- 
-    or  $t1 ,$t1 ,$t2
-    beq $t1 , 1 , find_banana
+   
 
+    beq $s0, 0xffffffff , find_banana
     srl $s1, $s0, 16         # s1 : target_x
     sll $s0, $s0, 16
     srl $s0, $s0, 16         # s0 : target_y
- 
-    la  $t1, coin_get
-    lw  $t2, 0($t1)   
-    add $t2, $t2 , 1
-    sw  $t2, 0($t1)
 
     lw  $s2 , BOT_X              #s2 : x
     lw  $s3 , BOT_Y              #s3 : y
@@ -546,7 +525,7 @@ star_coin_interrupt:
 
      lw  $s4 , BOT_X              #s2 : x
      lw  $s5 , BOT_Y              #s3 : y
-     bge $s4 , $s1 , finish
+     bge $s4 , $s1 , find_banana
      li  $t4 , 1
      sw  $t4 , ANGLE_CONTROL
      li  $t4 , 0
@@ -557,7 +536,7 @@ star_coin_interrupt:
 
      lw  $s4 , BOT_X              #s2 : x
      lw  $s5 , BOT_Y              #s3 : y
-     ble $s4 , $s1 , finish
+     ble $s4 , $s1 , find_banana
      li  $t4 , 1
      sw  $t4 , ANGLE_CONTROL
      li  $t4 , 180
