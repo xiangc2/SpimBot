@@ -141,7 +141,7 @@ plaintext: .space 512
 sol: .space 512
 uniq_chars: .space 25
 
-.align 2
+.align 4
 coin_get: .space 4
 
 .text
@@ -179,9 +179,6 @@ main:
     sw $t1 , VELOCITY
 
 compare:
-
-    la $t1 , coin_get
-    lw $t7 , 0($t1) 
 
     lw  $s1 , BOT_X              #s1 : x
     lw  $s2 , BOT_Y              #s2 : y
@@ -431,18 +428,16 @@ star_coin_interrupt:
     la  $t1, coin_get
     lw  $t2, 0($t1)
     
-    sge $t1 ,$t2, 5
-    seq $t2 ,$s0 ,0xffffffff 
+    sge $t3 ,$t2, 3
+    seq $t4 ,$s0 ,0xffffffff 
  
-    or  $t1 ,$t1 ,$t2
-    beq $t1 , 1 , find_banana
+    or  $t3 ,$t3 ,$t4
+    beq $t3 , 1 , find_banana
 
     srl $s1, $s0, 16         # s1 : target_x
     sll $s0, $s0, 16
     srl $s0, $s0, 16         # s0 : target_y
  
-    la  $t1, coin_get
-    lw  $t2, 0($t1)   
     add $t2, $t2 , 1
     sw  $t2, 0($t1)
 
@@ -450,7 +445,7 @@ star_coin_interrupt:
     lw  $s3 , BOT_Y              #s3 : y
 
     bge $s3 , $s0 , go_up
-     j   go_down
+    j   go_down
 
  go_up:
 
@@ -582,7 +577,7 @@ read_banana:
 	beq	$s4, 0xffffffff, finish
 	srl $t5, $s4, 16         # t5 : banana_x
     sll $s4, $s4, 16
-    srl $t6, $s4, 16         # t6 : banana_y
+    srl $t6, $s4, 16             # t6 : banana_y
 
 compare_banana:
 
@@ -599,10 +594,11 @@ see_y:
 	sub $t1, $0, $t1			# t1 = |delta y|
 
 abs_done:
-	sge $t0, $t0, 5
-	sge $t1, $t1, 5
-	and $t0, $t0, $t1
-	beq $t0, 1, finish
+
+    sge $t0, $t0, 11
+    sge $t1, $t1, 11
+    or $t0, $t0, $t1
+    beq $t0, 1, finish
 
     mul $t2 , $s2 , 300
     add $t2 , $t2 , $s1
@@ -612,6 +608,7 @@ abs_done:
     sge $t1 , $s1 , 150
     sge $t2 , $s2 , 150
 
+    li  $t5 , 0
     li  $t4 , 1
     and $t3 , $t1 , $t2
     beq $t3 , $t4 , lower_right
@@ -626,17 +623,24 @@ abs_done:
 
 upper_left:
 	lw  $s1 , BOT_X
-	add $s2, $s1, 2
-	li  $t1 , 340
+	add $s2,  $s1, 2
+	li  $t1 , 20
 	sw  $t1 , ANGLE
 	li  $t1 , 1
 	sw  $t1 , ANGLE_CONTROL
 
-loop_ul:
-	lw  $s1 , BOT_X
-	ble $s1, $s2, loop_ul
+        add $t5,  $t5  , 1
+        ble $t5 , 500 , upper_left
+        li  $t2 , 0
 
-	li  $t1 , 270
+loop_ul:
+      
+	lw  $s1 , BOT_X
+#	ble $s1, $s2, loop_ul
+        add $t2 , $t2 , 1 
+        ble $t2 , 500 , loop_ul  
+
+	li  $t1 , 250
 	sw  $t1 , ANGLE
 	li  $t1 , 1
 	sw  $t1 , ANGLE_CONTROL
@@ -645,16 +649,22 @@ loop_ul:
 upper_right:
 	lw  $s1 , BOT_Y
 	add $s2, $s1, 2
-	li  $t1 , 70
+	li  $t1 , 110
 	sw  $t1 , ANGLE
 	li  $t1 , 1
 	sw  $t1 , ANGLE_CONTROL
 
+        add $t5,  $t5  , 1
+        ble $t5 , 500 , upper_right
+        li  $t2 , 0
+
 loop_ur:
 	lw  $s1 , BOT_Y
-	ble $s1, $s2, loop_ur
+#	ble $s1, $s2, loop_ur
+        add $t2 , $t2 , 1 
+        ble $t2 , 500 , loop_ur  
 
-	li  $t1 , 0
+	li  $t1 , 340
 	sw  $t1 , ANGLE
 	li  $t1 , 1
 	sw  $t1 , ANGLE_CONTROL
@@ -664,18 +674,24 @@ lower_right:
 	lw  $s1 , BOT_X
 	sub $s2, $s1, 2
 
-	li  $t1 , 160
+	li  $t1 , 200
 	sw  $t1 , ANGLE
 	li  $t1 , 1
 	sw  $t1 , ANGLE_CONTROL
 
+        add $t5,  $t5  , 1
+        ble $t5 , 500 , lower_right
+        li  $t2 , 0
+
 loop_lr:
 	lw  $s1 , BOT_X
-	bge $s1, $s2, loop_lr
+#	bge $s1, $s2, loop_lr
+        add $t2 , $t2 , 1 
+        ble $t2 , 500 , loop_lr 
 
 	li  $t1 , 0
 	sw  $t1 , ANGLE
-	li  $t1 , 90
+	li  $t1 , 70
 	sw  $t1 , ANGLE_CONTROL
 	j 	finish
 
@@ -688,11 +704,18 @@ lower_left:
 	li  $t1 , 1
 	sw  $t1 , ANGLE_CONTROL
 
+        add $t5,  $t5  , 1
+        ble $t5 , 500 , lower_left
+        li  $t2 , 0
+
+
 loop_ll:
 	lw  $s1 , BOT_Y
-	bge $s1, $s2, loop_ll
+#	bge $s1, $s2, loop_ll
+        add $t2 , $t2 , 1 
+        ble $t2 , 500 , loop_ll
 
-	li  $t1 , 180
+	li  $t1 , 160
 	sw  $t1 , ANGLE
 	li  $t1 , 1
 	sw  $t1 , ANGLE_CONTROL
@@ -1029,6 +1052,10 @@ puzzle_interrupt:
 
 	# TODO: Solve the puzzle
     # TODO: Solve the puzzle
+        
+        li $t1 , 0
+        sw $t1 , VELOCITY
+
 	sub $sp, $sp, 24
 	sw  $a0,	0($sp)
 	sw	$a1,	4($sp)
@@ -1094,7 +1121,10 @@ lw	$t6, 16($sp)
 	sw	$t6		16($sp)
 	add	$sp, $sp, 20
 
-	j	done
+        li $t1 , 10
+        sw $t1 , VELOCITY
+	
+        j  done
 
 #--------------------------------------------------------------------------
 
